@@ -6,6 +6,9 @@
 package notificaciones;
 
 import etl.FilaNormal;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -25,6 +28,7 @@ public class Main {
     /**
      * @param args the command line arguments
      */
+    private static String USERNAME, PASSWORD;
     public static void main(String[] args) {
         String fechaactual = args[0];
         String fechaant = args[1];
@@ -201,8 +205,21 @@ public class Main {
         }
         c.cerrar();
 
-        final String username = "bodenor.gestion@gmail.com";
-        final String password = "Onomatopeya";
+        try {
+            String rutaProperties = System.getenv("RUTA_PROPERTIES");
+            InputStream entrada = new FileInputStream(rutaProperties);
+            Properties propUser = new Properties();
+            propUser.load(entrada);
+            USERNAME = propUser.getProperty("mail.username");
+            PASSWORD = propUser.getProperty("mail.password");
+        } catch (IOException ex) {
+            System.out.println("No se puede obtener la información de credenciales para envio de correos.");
+            System.out.println(ex);
+            ex.printStackTrace();
+        }
+
+        final String username = USERNAME;
+        final String password = PASSWORD;
 
         //java.security.Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
         Properties prop = new Properties();
