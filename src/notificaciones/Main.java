@@ -17,7 +17,6 @@ import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-
 /**
  * Clase principal que se ejecuta del programa
  *
@@ -29,6 +28,7 @@ public class Main {
      * @param args the command line arguments
      */
     private static String USERNAME, PASSWORD;
+
     public static void main(String[] args) {
         String fechaactual = args[0];
         String fechaant = args[1];
@@ -192,11 +192,13 @@ public class Main {
         c.abrir();
         ResultSet rs = c.ejecutarQuery(query);
         String destinatarios = "";
+        int cantdestinatarios = 0;
         try {
             while (rs.next()) {
                 destinatarios += rs.getString("EMAILDESTINATARIO") + ",";
+                cantdestinatarios++;
             }
-            
+
         } catch (SQLException ex) {
             System.out.println("No se pudo obtener el listado de destinatarios para enviar notificaciones.");
             System.out.println(ex);
@@ -205,52 +207,56 @@ public class Main {
         }
         c.cerrar();
 
-        try {
-            String rutaProperties = System.getenv("RUTA_PROPERTIES");
-            InputStream entrada = new FileInputStream(rutaProperties);
-            Properties propUser = new Properties();
-            propUser.load(entrada);
-            USERNAME = propUser.getProperty("mail.username");
-            PASSWORD = propUser.getProperty("mail.password");
-        } catch (IOException ex) {
-            System.out.println("No se puede obtener la información de credenciales para envio de correos.");
-            System.out.println(ex);
-            ex.printStackTrace();
-        }
-
-        final String username = USERNAME;
-        final String password = PASSWORD;
-
-        //java.security.Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
-        Properties prop = new Properties();
-
-        prop.put("mail.smtp.host", "smtp.gmail.com");
-        prop.put("mail.smtp.port", "587");
-        prop.put("mail.smtp.auth", "true");
-        prop.put("mail.smtp.starttls.enable", "true"); //TLS
-        Session session = Session.getInstance(prop,
-                new javax.mail.Authenticator() {
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(username, password);
+        //Si hay destinatarios se envía mail. Si no, no.
+        if (cantdestinatarios > 0) {
+            try {
+                String rutaProperties = System.getenv("RUTA_PROPERTIES");
+                InputStream entrada = new FileInputStream(rutaProperties);
+                Properties propUser = new Properties();
+                propUser.load(entrada);
+                USERNAME = propUser.getProperty("mail.username");
+                PASSWORD = propUser.getProperty("mail.password");
+            } catch (IOException ex) {
+                System.out.println("No se puede obtener la información de credenciales para envio de correos.");
+                System.out.println(ex);
+                ex.printStackTrace();
             }
-        });
-        try {
-            Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(USERNAME));
-            message.setRecipients(
-                    Message.RecipientType.TO,
-                    InternetAddress.parse(destinatarios)
-            );
-            message.setSubject("Notificación de problemas de comunicación en remarcadores");
-            message.setContent(mensajeintro + tabla, "text/html");
 
-            Transport.send(message);
-            System.out.println("Email enviado");
-        } catch (MessagingException ex) {
-            System.out.println("No se pudo enviar el mensaje");
-            System.out.println(ex);
-            ex.printStackTrace();
+            final String username = USERNAME;
+            final String password = PASSWORD;
+
+            //java.security.Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
+            Properties prop = new Properties();
+
+            prop.put("mail.smtp.host", "smtp.gmail.com");
+            prop.put("mail.smtp.port", "587");
+            prop.put("mail.smtp.auth", "true");
+            prop.put("mail.smtp.starttls.enable", "true"); //TLS
+            Session session = Session.getInstance(prop,
+                    new javax.mail.Authenticator() {
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(username, password);
+                }
+            });
+            try {
+                Message message = new MimeMessage(session);
+                message.setFrom(new InternetAddress(USERNAME));
+                message.setRecipients(
+                        Message.RecipientType.TO,
+                        InternetAddress.parse(destinatarios)
+                );
+                message.setSubject("Notificación de problemas de comunicación en remarcadores");
+                message.setContent(mensajeintro + tabla, "text/html");
+
+                Transport.send(message);
+                System.out.println("Email enviado");
+            } catch (MessagingException ex) {
+                System.out.println("No se pudo enviar el mensaje");
+                System.out.println(ex);
+                ex.printStackTrace();
+            }
         }
+
     }
 
 }
