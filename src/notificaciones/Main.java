@@ -185,7 +185,7 @@ public class Main {
                 tabla += "</tr>";
             }
         }
-        tabla += "</tbody></table>" + "<br />" + "<p>Este es un mensaje generado automáticamente. No responda este mensaje.</p>" + "<br />" + "<p>Gestión Bodenor</p>.</body></html>";
+        tabla += "</tbody></table>" + "<br />" + "<p>Este es un mensaje generado automáticamente. No responda este mensaje.</p>" + "<br />" + "<p>Bodenor Flexcenter<br />Gestor Software Lectura Remota de Remarcadores Eléctricos</p>.</body></html>";
 
         //Buscar destinatarios
         String query = "CALL SP_GET_DESTINATARIOS_NOTIFICACION()";
