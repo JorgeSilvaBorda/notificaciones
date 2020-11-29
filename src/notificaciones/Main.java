@@ -28,12 +28,13 @@ public class Main {
      * @param args the command line arguments
      */
     private static String USERNAME, PASSWORD;
+    private static int HORAS_LEIDAS;
 
     public static void main(String[] args) {
         String fechaactual = args[0];
         String fechaant = args[1];
         int cantlecturas = Integer.parseInt(args[2]);
-
+        HORAS_LEIDAS = (int)(cantlecturas * 5) / 60;
         Conexion c = new Conexion();
         String query = "CALL SP_GET_ORIGEN_REMARCADORES_FECHAS("
                 + "'" + fechaant + "',"
@@ -146,22 +147,22 @@ public class Main {
 
     public static void procesarEmail(LinkedList<Notificacion> notificaciones) {
         //Construir tabla de remarcadores a notificar
-        String mensajeintro = "<html><body><p>Estimados, a continuación se entrega un detalle de los remarcadores que han presentado problemas de comunicación en el último sondeo.</p>" + "<br />";
+        String mensajeintro = "<html><body><p>Estimados, a continuación se entrega un detalle de los remarcadores que han presentado problemas de comunicación en el último sondeo (últimas " + HORAS_LEIDAS + " horas para cada remarcador).</p>" + "<br />";
         String tabla = "<table style='border: 1px solid black; border-collapse: collapse;'>"
                 + "<thead>"
                 + "<tr>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>ID Remarcador</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Lectura actual</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Fecha lectura<br />actual</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Hora lectura<br />actual</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Lectura anterior</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Fecha lectura<br />anterior</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Hora lectura<br />anterior</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Instalación</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Empalme</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Bodega</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Cliente</th>"
-                + "<th style='border: 1px solid black; font-weight: bold; padding-left: 2px; padding-right: 2px;'>Lecturas<br />procesadas</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>ID Remarcador</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Lectura actual</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Fecha lectura<br />actual</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Hora lectura<br />actual</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Lectura anterior</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Fecha lectura<br />anterior</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Hora lectura<br />anterior</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Instalación</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Empalme</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Bodega</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Cliente</th>"
+                + "<th style='border: 1px solid black; font-weight: bold; padding: 1px 2px 1px 2px;'>Lecturas<br />procesadas</th>"
                 + "</tr>"
                 + "</thead>"
                 + "<tbody>";
