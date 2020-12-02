@@ -247,7 +247,7 @@ public class Main {
                         InternetAddress.parse(destinatarios)
                 );
                 message.setSubject("Notificación de problemas de comunicación en remarcadores");
-                message.setContent(mensajeintro + tabla, "text/html");
+                message.setContent(mensajeintro + tabla, "text/html; charset=UTF-8");
 
                 Transport.send(message);
                 System.out.println("Email enviado");
