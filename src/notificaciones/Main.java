@@ -142,7 +142,11 @@ public class Main {
             }
 
         }
-        procesarEmail(notificaciones);
+        if(notificaciones.size() > 0){
+            //Notificar por email sólo cuando exista uno o más problemas
+            procesarEmail(notificaciones);
+        }
+        
     }
 
     public static void procesarEmail(LinkedList<Notificacion> notificaciones) {
