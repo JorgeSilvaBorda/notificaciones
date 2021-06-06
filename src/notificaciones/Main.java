@@ -34,7 +34,7 @@ public class Main {
         String fechaactual = args[0];
         String fechaant = args[1];
         int cantlecturas = Integer.parseInt(args[2]);
-        HORAS_LEIDAS = (int)(cantlecturas * 5) / 60;
+        HORAS_LEIDAS = (int) (cantlecturas * 5) / 60;
         Conexion c = new Conexion();
         String query = "CALL SP_GET_ORIGEN_REMARCADORES_FECHAS("
                 + "'" + fechaant + "',"
@@ -92,7 +92,8 @@ public class Main {
             double hacehoras = remarcador[remarcador.length - 1].lecturareal;
             String fechahoraanterior = remarcador[remarcador.length - 1].fechahora;
             String fechahoraactual = remarcador[0].fechahora;
-            //System.out.println("ID: " + remarcador[0].idremarcador + " Last: " + ultimalectura + " - Ant: " + hacehoras + " = " + (ultimalectura - hacehoras) );
+            System.out.println("ID: " + remarcador[0].idremarcador + " Last: " + ultimalectura + " - Ant: " + hacehoras + " = " + (ultimalectura - hacehoras));
+
             if (ultimalectura - hacehoras == 0.000000d) {
                 System.out.println("Se escribe notificacion:");
                 System.out.println("IDREMARCADOR: " + numremarcador);
@@ -142,14 +143,40 @@ public class Main {
             }
 
         }
-        if(notificaciones.size() > 0){
+        if (notificaciones.size() > 0) {
             //Notificar por email sólo cuando exista uno o más problemas
             procesarEmail(notificaciones);
+        } else {
+            System.out.println("No se encontraron problemas. No se envía notificación.");
         }
-        
+
     }
 
     public static void procesarEmail(LinkedList<Notificacion> notificaciones) {
+        //Buscar destinatarios
+        String query = "CALL SP_GET_DESTINATARIOS_NOTIFICACION_ORDENADOS()";
+        Conexion c = new Conexion();
+        c.abrir();
+        ResultSet rs = c.ejecutarQuery(query);
+        LinkedList<Destinatario> destinatarios = new LinkedList();
+
+        try {
+            while (rs.next()) {
+                destinatarios.add(new Destinatario(
+                        rs.getInt("IDINSTALACION"),
+                        rs.getString("NOMINSTALACION"),
+                        rs.getString("CORREOS")
+                ));
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("No se pudo obtener el listado de destinatarios para enviar notificaciones.");
+            System.out.println(ex);
+            ex.printStackTrace();
+            c.cerrar();
+        }
+        c.cerrar();
+
         //Construir tabla de remarcadores a notificar
         String mensajeintro = "<html><body><p>Estimados, a continuación se entrega un detalle de los remarcadores que han presentado problemas de comunicación en el último sondeo (últimas " + HORAS_LEIDAS + " horas para cada remarcador).</p>" + "<br />";
         String tabla = "<table style='border: 1px solid black; border-collapse: collapse;'>"
@@ -171,97 +198,104 @@ public class Main {
                 + "</thead>"
                 + "<tbody>";
 
-        for (Notificacion notificacion : notificaciones) {
-            if (notificacion.codestado.equals("NUEVO")) {
-                tabla += "<tr>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.numremarcador + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.lecturaactual + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.fechaactual + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.horaactual + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.lecturaanterior + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.fechaanterior + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.horaanterior + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.nominstalacion + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.numempalme + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.nomparque + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.nomcliente + "</td>";
-                tabla += "<td style='border: 1px solid black'>" + notificacion.cantregistros + "</td>";
-                tabla += "</tr>";
-            }
-        }
-        tabla += "</tbody></table>" + "<br />" + "<p>Este es un mensaje generado automáticamente. No responda este mensaje.</p>" + "<br />" + "<p>Bodenor Flexcenter<br />Gestor Software Lectura Remota de Remarcadores Eléctricos</p>.</body></html>";
-
-        //Buscar destinatarios
-        String query = "CALL SP_GET_DESTINATARIOS_NOTIFICACION()";
-        Conexion c = new Conexion();
-        c.abrir();
-        ResultSet rs = c.ejecutarQuery(query);
-        String destinatarios = "";
-        int cantdestinatarios = 0;
-        try {
-            while (rs.next()) {
-                destinatarios += rs.getString("EMAILDESTINATARIO") + ",";
-                cantdestinatarios++;
-            }
-
-        } catch (SQLException ex) {
-            System.out.println("No se pudo obtener el listado de destinatarios para enviar notificaciones.");
-            System.out.println(ex);
-            ex.printStackTrace();
-            c.cerrar();
-        }
-        c.cerrar();
-
-        //Si hay destinatarios se envía mail. Si no, no.
-        if (cantdestinatarios > 0) {
-            try {
-                String rutaProperties = System.getenv("RUTA_PROPERTIES");
-                InputStream entrada = new FileInputStream(rutaProperties);
-                Properties propUser = new Properties();
-                propUser.load(entrada);
-                USERNAME = propUser.getProperty("mail.username");
-                PASSWORD = propUser.getProperty("mail.password");
-            } catch (IOException ex) {
-                System.out.println("No se puede obtener la información de credenciales para envio de correos.");
-                System.out.println(ex);
-                ex.printStackTrace();
-            }
-
-            final String username = USERNAME;
-            final String password = PASSWORD;
-
-            //java.security.Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
-            Properties prop = new Properties();
-
-            prop.put("mail.smtp.host", "smtp.gmail.com");
-            prop.put("mail.smtp.port", "587");
-            prop.put("mail.smtp.auth", "true");
-            prop.put("mail.smtp.starttls.enable", "true"); //TLS
-            Session session = Session.getInstance(prop,
-                    new javax.mail.Authenticator() {
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(username, password);
+        for (Destinatario d : destinatarios) {
+            if (!d.nominstalacion.equals("Todas")) {
+                for (Notificacion notificacion : notificaciones) {
+                    if (notificacion.codestado.equals("NUEVO") && d.nominstalacion.endsWith(notificacion.nominstalacion)) {
+                        tabla += "<tr>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.numremarcador + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.lecturaactual + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.fechaactual + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.horaactual + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.lecturaanterior + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.fechaanterior + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.horaanterior + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.nominstalacion + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.numempalme + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.nomparque + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.nomcliente + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.cantregistros + "</td>";
+                        tabla += "</tr>";
+                    }
                 }
-            });
-            try {
-                Message message = new MimeMessage(session);
-                message.setFrom(new InternetAddress(USERNAME));
-                message.setRecipients(
-                        Message.RecipientType.TO,
-                        InternetAddress.parse(destinatarios)
-                );
-                message.setSubject("Notificación de problemas de comunicación en remarcadores");
-                message.setContent(mensajeintro + tabla, "text/html; charset=UTF-8");
+                tabla += "</tbody></table>" + "<br />" + "<p>Este es un mensaje generado automáticamente. No responda este mensaje.</p>" + "<br />" + "<p>Bodenor Flexcenter<br />Software Gestor Lectura Remota de Remarcadores Eléctricos</p>.</body></html>";
+                d.contenido = tabla;
+            } else {
 
-                Transport.send(message);
-                System.out.println("Email enviado");
-            } catch (MessagingException ex) {
-                System.out.println("No se pudo enviar el mensaje");
-                System.out.println(ex);
-                ex.printStackTrace();
+                for (Notificacion notificacion : notificaciones) {
+                    if (notificacion.codestado.equals("NUEVO")) {
+                        tabla += "<tr>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.numremarcador + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.lecturaactual + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.fechaactual + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.horaactual + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.lecturaanterior + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.fechaanterior + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.horaanterior + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.nominstalacion + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.numempalme + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.nomparque + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.nomcliente + "</td>";
+                        tabla += "<td style='border: 1px solid black'>" + notificacion.cantregistros + "</td>";
+                        tabla += "</tr>";
+                    }
+                }
+                tabla += "</tbody></table>" + "<br />" + "<p>Este es un mensaje generado automáticamente. No responda este mensaje.</p>" + "<br />" + "<p>Bodenor Flexcenter<br />Software Gestor Lectura Remota de Remarcadores Eléctricos</p>.</body></html>";
+                d.contenido = tabla;
             }
         }
+        //Si hay destinatarios se envía mail. Si no, no.
+        if (destinatarios.size() > 0) {
 
+            //Para cada grupo de destinatarios, realizar el envío
+            for (Destinatario d : destinatarios) {
+                try {
+                    String rutaProperties = System.getenv("RUTA_PROPERTIES");
+                    InputStream entrada = new FileInputStream(rutaProperties);
+                    Properties propUser = new Properties();
+                    propUser.load(entrada);
+                    USERNAME = propUser.getProperty("mail.username");
+                    PASSWORD = propUser.getProperty("mail.password");
+                } catch (IOException ex) {
+                    System.out.println("No se puede obtener la información de credenciales para envio de correos.");
+                    System.out.println(ex);
+                    ex.printStackTrace();
+                }
+
+                final String username = USERNAME;
+                final String password = PASSWORD;
+
+                //java.security.Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
+                Properties prop = new Properties();
+
+                prop.put("mail.smtp.host", "smtp.gmail.com");
+                prop.put("mail.smtp.port", "587");
+                prop.put("mail.smtp.auth", "true");
+                prop.put("mail.smtp.starttls.enable", "true"); //TLS
+                Session session = Session.getInstance(prop,
+                        new javax.mail.Authenticator() {
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(username, password);
+                    }
+                });
+                try {
+                    Message message = new MimeMessage(session);
+                    message.setFrom(new InternetAddress(USERNAME));
+                    message.setRecipients(
+                            Message.RecipientType.TO,
+                            InternetAddress.parse(d.correos)
+                    );
+                    message.setSubject("Notificación de problemas de comunicación en remarcadores");
+                    message.setContent(mensajeintro + d.contenido, "text/html; charset=UTF-8");
+
+                    Transport.send(message);
+                    System.out.println("Email enviado");
+                } catch (MessagingException ex) {
+                    System.out.println("No se pudo enviar el mensaje");
+                    System.out.println(ex);
+                    ex.printStackTrace();
+                }
+            }
+        }
     }
-
 }

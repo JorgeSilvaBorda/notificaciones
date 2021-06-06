@@ -49,11 +49,37 @@ public class Conexion {
 	    InputStream entrada = new FileInputStream(rutaProperties);
 	    Properties prop = new Properties();
 	    prop.load(entrada);
-	    this.host = prop.getProperty("bd.host");
-	    this.user = prop.getProperty("bd.user");
-	    this.port = Integer.parseInt(prop.getProperty("bd.port"));
-	    this.bd = prop.getProperty("bd.bd");
-	    this.pass = prop.getProperty("bd.password");
+	    this.host = prop.getProperty("bd.master.host").trim();
+	    this.user = prop.getProperty("bd.master.user").trim();
+	    this.port = Integer.parseInt(prop.getProperty("bd.master.port").trim());
+	    this.bd = prop.getProperty("bd.master.bd").trim();
+	    this.pass = prop.getProperty("bd.master.password").trim();
+	}catch (IOException | NumberFormatException ex) {
+	    System.out.println("Ocurrió un problema al ajustar los parámetros de conexión.");
+	    System.out.println(ex);
+	}
+	
+    }
+    
+    public void setReplica() {
+	
+	String rutaProperties = System.getenv("RUTA_PROPERTIES"); //Habilitar para lectura desde variable de entorno
+	if(rutaProperties == null){
+	    System.out.println("Error: No se puede leer desde la variable de entorno RUTA_PROPERTIES.");
+	    System.out.println("    Asegúrese de que se encuentre correctamente ajustada en el sistema");
+	    System.out.println("    como variable global y que la ruta que contenga sea la que corresponde");
+	    System.out.println("    a la ubicación del archivo application.properties que contiene la ");
+	    System.out.println("    configuración de la aplicación WebPanel");
+	}
+	try{
+	    InputStream entrada = new FileInputStream(rutaProperties);
+	    Properties prop = new Properties();
+	    prop.load(entrada);
+	    this.host = prop.getProperty("bd.replica.host").trim();
+	    this.user = prop.getProperty("bd.replica.user").trim();
+	    this.port = Integer.parseInt(prop.getProperty("bd.replica.port").trim());
+	    this.bd = prop.getProperty("bd.replica.bd").trim();
+	    this.pass = prop.getProperty("bd.replica.password").trim();
 	}catch (IOException | NumberFormatException ex) {
 	    System.out.println("Ocurrió un problema al ajustar los parámetros de conexión.");
 	    System.out.println(ex);
