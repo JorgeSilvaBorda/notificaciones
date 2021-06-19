@@ -58,13 +58,6 @@ public class Start {
         correos = getNotificaciones(ides, fechaant, fechaactual, cantlecturas, correos);
 
         for (Correo cor : correos) {
-            System.out.println("");
-            System.out.println("");
-            System.out.println("");
-            System.out.println(cor.getContenido());
-            System.out.println("");
-            System.out.println("");
-            System.out.println("");
             if(cor.numfilas > 0){
                 enviar(cor);
             }
