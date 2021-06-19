@@ -3,7 +3,7 @@ package etl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
-import notificaciones.Conexion;
+import modelo.Conexion;
 
 /**
  * Clase creada para obtener dataset completo de los remarcadores y procesarlos

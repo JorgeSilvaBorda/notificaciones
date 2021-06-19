@@ -1,4 +1,4 @@
-package notificaciones;
+package modelo;
 
 /**
  * @author Jorgeg Silva Borda

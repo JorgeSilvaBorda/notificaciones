@@ -1,4 +1,4 @@
-package notificaciones;
+package modelo;
 
 public class Destinatario {
     public int idinstalacion;

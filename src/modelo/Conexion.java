@@ -1,4 +1,4 @@
-package notificaciones;
+package modelo;
 
 import java.io.FileInputStream;
 import java.io.IOException;
