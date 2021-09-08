@@ -58,7 +58,7 @@ public class Start {
         correos = getNotificaciones(ides, fechaant, fechaactual, cantlecturas, correos);
 
         for (Correo cor : correos) {
-            if(cor.numfilas > 0){
+            if (cor.numfilas > 0) {
                 enviar(cor);
             }
         }
@@ -88,14 +88,17 @@ public class Start {
     private static LinkedList<Correo> getNotificaciones(int[] ides, String desde, String hasta, int cantregistros, LinkedList<Correo> correos) {
         for (int id : ides) {
             LinkedList<Registro> registros = LecturaController.getRegistrosDesdeHastaRemarcadorNumremarcador(id, desde, hasta);
+            System.out.println("Cant registros remarcador ID " + id + ": " + registros.size());
             int cont = 1;
             float sumaDelta = 0;
             float hacehoras = 0;
             String fechahoraanterior = "";
-            for (int i = (registros.size() - 1); i >= registros.size() - cantregistros - 1; i--) {
-                sumaDelta += registros.get(i).delta;
-                fechahoraanterior = registros.get(i).timestamp;
-                hacehoras = registros.get(i).lectura;
+            if (registros.size() >= cantregistros) {
+                for (int i = (registros.size() - 1); i >= (registros.size() - cantregistros - 1) || i == 0; i--) {
+                    sumaDelta += registros.get(i).delta;
+                    fechahoraanterior = registros.get(i).timestamp;
+                    hacehoras = registros.get(i).lectura;
+                }
             }
 
             String fechahoraactual = registros.get(registros.size() - 1).timestamp;
@@ -104,7 +107,7 @@ public class Start {
             System.out.println("Ultima lectura: " + fechahoraactual + ":" + ultimalectura);
             System.out.println("Anterior lectura: " + fechahoraanterior + ":" + hacehoras);
             System.out.println("La suma de los últimos " + cantregistros + " es: " + sumaDelta);
-            if (sumaDelta == 0) {
+            if (sumaDelta == 0 || registros.size() < cantregistros) {
                 System.out.println("Se notifica");
                 //Se inserta la notificación para poder obtener información de referencia del remarcador
                 System.out.println("Se escribe notificacion:");
@@ -119,10 +122,10 @@ public class Start {
                 String query = "CALL SP_INS_NOTIFICACION("
                         + id + ", "
                         + "'" + fechahoraactual + "',"
-                        + "'" + fechahoraanterior + "',"
+                        + "'" + (fechahoraanterior.equals("") ? fechahoraactual : fechahoraanterior) + "',"
                         + ultimalectura + ","
                         + hacehoras + ", "
-                        + cantregistros + ""
+                        + (registros.size() < cantregistros ? registros.size() : cantregistros) + ""
                         + ")";
                 con.abrir();
                 System.out.println("Query: " + query);
